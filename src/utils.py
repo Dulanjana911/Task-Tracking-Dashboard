@@ -1,3 +1,4 @@
+import pandas as pd
 from datetime import datetime
 import streamlit as st
 
@@ -11,7 +12,7 @@ def calculate_exceed_time(end_time, exceed_time):
     """Calculate if task exceeded allocated time"""
     if pd.isna(end_time) or pd.isna(exceed_time):
         return "N/A"
-    
+
     exceed_duration = exceed_time - end_time
     if exceed_duration.total_seconds() > 0:
         return f"Exceeded by {exceed_duration}"
