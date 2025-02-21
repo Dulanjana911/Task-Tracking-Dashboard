@@ -27,34 +27,70 @@ excel_url = st.text_input(
 
 if excel_url:
     st.session_state.data_handler.set_excel_url(excel_url)
-    
+
     # Auto-refresh mechanism
     current_time = time.time()
     if current_time - st.session_state.last_refresh >= 30:
         st.session_state.last_refresh = current_time
-        st.experimental_rerun()
-    
+        st.rerun()
+
     # Data loading and processing
     with st.spinner("Loading data..."):
         df = st.session_state.data_handler.fetch_data()
         if df is not None:
             gantt_df = st.session_state.data_handler.process_data_for_gantt(df)
-            
-            # Create Gantt chart
-            fig = st.session_state.gantt_chart.create_gantt(gantt_df)
-            if fig is not None:
-                st.plotly_chart(fig, use_container_width=True)
-                
-                # Display task details
-                st.subheader("Task Details")
-                for _, row in gantt_df.iterrows():
-                    with st.expander(f"Task: {row['Task ID']}"):
-                        st.markdown(create_task_details(row))
-            
-            # Display last refresh time
+
+            # Create tabs for different views
+            tab1, tab2 = st.tabs(["Gantt Chart", "Data Table"])
+
+            with tab1:
+                # Create Gantt chart
+                fig = st.session_state.gantt_chart.create_gantt(gantt_df)
+                if fig is not None:
+                    st.plotly_chart(fig, use_container_width=True)
+
+                    # Display task details
+                    st.subheader("Task Details")
+                    for _, row in gantt_df.iterrows():
+                        with st.expander(f"Task: {row['Task ID']}"):
+                            st.markdown(create_task_details(row))
+
+            with tab2:
+                st.subheader("Task Data Table")
+                # Add search/filter box
+                search = st.text_input("Search tasks", "")
+
+                # Filter data based on search
+                if search:
+                    filtered_df = gantt_df[
+                        gantt_df['Customer name'].str.contains(search, case=False) |
+                        gantt_df['Batch No'].astype(str).str.contains(search, case=False) |
+                        gantt_df['Style'].str.contains(search, case=False)
+                    ]
+                else:
+                    filtered_df = gantt_df
+
+                # Display filtered data
+                if not filtered_df.empty:
+                    # Select columns to display
+                    display_cols = [
+                        'Customer name', 'Batch No', 'Style', 
+                        'Submission type', 'Required members',
+                        'Inspection start time', 'Inspection End time',
+                        'Inspection Exceed time'
+                    ]
+                    # Convert required members list to string for display
+                    filtered_df['Required members'] = filtered_df['Required members'].apply(lambda x: ', '.join(x) if isinstance(x, list) else x)
+                    st.dataframe(
+                        filtered_df[display_cols],
+                        use_container_width=True,
+                        hide_index=True
+                    )
+                else:
+                    st.info("No matching tasks found")
+
+            # Display last refresh time and statistics
             st.sidebar.info(f"Last refreshed: {time.strftime('%Y-%m-%d %H:%M:%S')}")
-            
-            # Display data statistics
             st.sidebar.subheader("Dashboard Statistics")
             st.sidebar.metric("Total Tasks", len(df))
             st.sidebar.metric("Active Members", 
