@@ -16,21 +16,27 @@ if 'gantt_chart' not in st.session_state:
 st.title("Task Tracking Dashboard")
 st.markdown("""
     This dashboard provides real-time visualization of task tracking data from Excel.
-    Updates automatically every 30 seconds.
+    Updates automatically every 10 seconds.
 """)
 
-# Excel URL input
-excel_url = st.text_input(
-    "Enter Excel URL",
-    help="Paste the URL of your online Excel file here"
-)
+# Excel URL input and refresh controls
+col1, col2 = st.columns([3, 1])
+with col1:
+    excel_url = st.text_input(
+        "Enter Excel URL",
+        help="Paste the URL of your online Excel file here"
+    )
+with col2:
+    if st.button("🔄 Refresh Now"):
+        st.session_state.last_refresh = 0
+        st.rerun()
 
 if excel_url:
     st.session_state.data_handler.set_excel_url(excel_url)
 
     # Auto-refresh mechanism
     current_time = time.time()
-    if current_time - st.session_state.last_refresh >= 30:
+    if current_time - st.session_state.last_refresh >= 10:  # Changed from 30 to 10 seconds
         st.session_state.last_refresh = current_time
         st.rerun()
 
@@ -100,4 +106,4 @@ else:
 
 # Footer
 st.markdown("---")
-st.markdown("Dashboard updates automatically every 30 seconds")
+st.markdown("Dashboard updates automatically every 10 seconds")
